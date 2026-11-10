@@ -3,9 +3,9 @@ import rospy
 from qt_robot_interface.srv import speech_say, emotion_show, gesture_play
 
 class QTrobotController:
+
     def say(self, text):
         rospy.wait_for_service("/qt_robot/speech/say")
-
         try:
             speech_service = rospy.ServiceProxy("/qt_robot/speech/say", speech_say ) #speechsay is part of qtrobot interface
             speech_service(text)
