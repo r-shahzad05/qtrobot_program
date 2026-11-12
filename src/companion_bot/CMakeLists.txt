@@ -1,18 +1,24 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(companion_bot)
 
-find_package(catkin REQUIRED COMPONENTS
-  rospy
-  qt_robot_interface
+find_package(ament_cmake REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(qtrobot_interfaces REQUIRED)
+
+install(
+  PROGRAMS
+    scripts/companion_bot_node.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-catkin_package()
-
-catkin_install_python(PROGRAMS
-  scripts/companion_bot_node.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(
+  DIRECTORY bot_functionality
+  DESTINATION lib/python3.12/site-packages/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
+
+ament_package()

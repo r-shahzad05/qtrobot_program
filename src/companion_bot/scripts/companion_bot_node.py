@@ -1,3 +1,37 @@
-import rospy
+#!/usr/bin/env python3
 
-rospy.init_node("companion_bot")
+import rclpy
+from rclpy.node import Node
+
+from companion_bot.bot_functionality.qtrobot_controller import QTrobotController
+
+
+class QT_companionbotnode(Node):
+    def __init__(self):
+        super().__init__("companion_bot")
+
+        
+        self.declare_parameter("speak_on_start", True)
+        self.declare_parameter("startup_emotion", "QT/happy")
+
+        self.robot = QTrobotController(self)
+
+        self.robot.say("Hello I am a companion robot")
+        self.robot.show_emotion("QT/happy")
+
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = QT_companionbotnode()
+
+    try:
+        rclpy.spin(node)
+
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

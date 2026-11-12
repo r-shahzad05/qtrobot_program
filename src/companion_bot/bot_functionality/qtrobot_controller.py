@@ -1,46 +1,83 @@
-import sys
-import rospy
-from qt_robot_interface.srv import speech_say, emotion_show, gesture_play
+import rclpy
+from qtrobot_interfaces.srv import (
+    FaceEmotionList,
+    FaceEmotionShow,
+    GestureFileList,
+    GestureFilePlay,
+    TtsEngineSayText,
+)
+
 
 class QTrobotController:
+    def __init__(self, node):
+        self.node = node
+        self.say_client = node.create_client(
+            TtsEngineSayText,
+            "/qtrobot/tts/engine/say/text",
+        )
+        self.emotion_client = node.create_client(
+            FaceEmotionShow,
+            "/qtrobot/face/emotion/show",
+        )
+        self.gesture_client = node.create_client(
+            GestureFilePlay,
+            "/qtrobot/gesture/file/play",
+        )
+        self.emotion_list_client = node.create_client(
+            FaceEmotionList,
+            "/qtrobot/face/emotion/list",
+        )
+        self.gesture_list_client = node.create_client(
+            GestureFileList,
+            "/qtrobot/gesture/file/list",
+        )
+
+    def _call(self, client, request):
+        if not client.wait_for_service(timeout_sec=30.0):
+            self.node.get_logger().error(
+                f"Service unavailable: {client.srv_name}"
+            )
+            return None
+
+        future = client.call_async(request)
+        rclpy.spin_until_future_complete(self.node, future)
+
+        if future.exception() is not None:
+            self.node.get_logger().error(
+                f"Service call failed: {future.exception()}"
+            )
+            return None
+
+        return future.result()
 
     def say(self, text):
-        rospy.wait_for_service("/qt_robot/speech/say")
-        try:
-            speech_service = rospy.ServiceProxy("/qt_robot/speech/say", speech_say ) #speechsay is part of qtrobot interface
-            speech_service(text)
-            rospy.loginfo("Speech done")
-            return True
+        request = TtsEngineSayText.Request(text=text)
+        result = self._call(self.say_client, request)
+        return result is not None and result.status and result.result
 
-        except rospy.ServiceException as e:
-            rospy.logerr("Service call failed, %s", e)
-            return False
+    def show_emotion(self, emotion, speed=0.0):
+        request = FaceEmotionShow.Request(emotion=emotion, speed=speed)
+        result = self._call(self.emotion_client, request)
+        return result is not None and result.status and result.result
 
+    def show_gesture(self, gesture, speed_factor=1.0):
+        request = GestureFilePlay.Request(
+            gesture=gesture,
+            speed_factor=speed_factor,
+        )
+        result = self._call(self.gesture_client, request)
+        return result is not None and result.status and result.result
 
-    def show_emotion(self, emotion):
+    def list_emotions(self):
+        result = self._call(
+            self.emotion_list_client,
+            FaceEmotionList.Request(),
+        )
+        return result.result if result is not None and result.status else []
 
-        rospy.wait_for_service("/qt_robot/emotion/show")
-        try:
-            emotion_service = rospy.ServiceProxy("/qt_robot/emotion/show", emotion_show)
-            emotion_service(emotion)
-            rospy.loginfo("Emotion shown")
-            return True
-
-        except  rospy.ServiceException as e:
-            rospy.logerr("Service call failed, %s", e)
-            return False
-        
-
-    def show_gesture(self, gesture):
-        rospy.wait_for_service("/qt_robot/gesture/play")
-
-        try:
-            gesture_service = rospy.ServiceProxy("/qt_robot/gesture/play", gesture_play)
-            gesture_service(gesture, 0)
-            rospy.loginfo("Gesture finished")
-            return True
-
-        except rospy.ServiceException as e:
-            rospy.logerr("Service call failed, %s", e)
-            return False
-
+    def list_gestures(self):
+        result = self._call(
+            self.gesture_list_client,
+            GestureFileList.Request(),
+        )
+        return result.result if result is not None and result.status else []
