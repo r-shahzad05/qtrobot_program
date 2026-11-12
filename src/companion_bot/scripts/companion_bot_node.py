@@ -10,10 +10,6 @@ class QT_companionbotnode(Node):
     def __init__(self):
         super().__init__("companion_bot")
 
-        
-        self.declare_parameter("speak_on_start", True)
-        self.declare_parameter("startup_emotion", "QT/happy")
-
         self.robot = QTrobotController(self)
 
         self.robot.say("Hello I am a companion robot")
