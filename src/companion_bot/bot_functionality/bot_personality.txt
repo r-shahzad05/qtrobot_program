@@ -9,6 +9,3 @@ add emotions
 
 the gestures you can do are:
 add gestures
-
------------Importnt chat history-------------
-
