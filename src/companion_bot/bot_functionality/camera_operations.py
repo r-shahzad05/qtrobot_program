@@ -10,6 +10,7 @@ from deepface import DeepFace
 from qtrobot_interfaces.msg import ImageFrameRaw
 from qtrobot_interfaces.srv import FaceLook
 from rclpy.node import Node
+from std_msgs.msg import String
 
 
 class FaceDetectorNode(Node):
@@ -45,6 +46,11 @@ class FaceDetectorNode(Node):
             self.image_callback,
             10,
         )
+        self.emotion_publisher = self.create_publisher(
+            String,
+            "/companion_bot/detected_emotion",
+            10,
+        )
 
         self.get_logger().info("Face detector is ready")
 
@@ -75,12 +81,18 @@ class FaceDetectorNode(Node):
         self.get_logger().info(
             f"Detected emotion: {emotion}"
         )
+        self.publish_emotion(emotion)
 
         self.look_at_face(
             face_region,
             message.width,
             message.height,
         )
+
+    def publish_emotion(self, emotion):
+        message = String()
+        message.data = emotion
+        self.emotion_publisher.publish(message)
 
     def convert_image(self, message):
         width = int(message.width)
@@ -233,4 +245,19 @@ class FaceDetectorNode(Node):
         )
 
         self.look_future = self.look_client.call_async(request)
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = FaceDetectorNode()
+
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
 
