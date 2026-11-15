@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 
-from companion_bot.bot_functionality.qtrobot_controller import QTrobotController
+from companion_bot.bot_functionality.copilot_emotion_gesturelister_QT import QTrobotController
 
 
 class QT_companionbotnode(Node):
