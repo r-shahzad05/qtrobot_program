@@ -7,7 +7,17 @@
     pkg="companion_bot"
     exec="companion_bot_node.py"
     output="screen">
-    <param name="greeting" value="$(arg greeting)" />
-    <param name="speak_on_start" value="$(arg speak_on_start)" />
+    <param name="greeting" value="$(var greeting)" />
+    <param name="speak_on_start" value="$(var speak_on_start)" />
+  </node>
+
+  <node
+    name="face_detector"
+    pkg="companion_bot"
+    exec="camera_operations.py"
+    output="screen">
+    <param name="analysis_interval" value="0.5" />
+    <param name="gaze_duration" value="0.2" />
+    <param name="invert_gaze_x" value="false" />
   </node>
 </launch>

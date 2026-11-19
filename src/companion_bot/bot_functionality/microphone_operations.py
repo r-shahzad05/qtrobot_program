@@ -9,12 +9,16 @@ from vosk import Model, KaldiRecognizer
 import time
 import wave
 import json
+from pathlib import Path
+from typing import Callable
 
 
 class QT_mic_operations:
 
-    def __init__(self,node):
+    def __init__(self, node, on_transcription):
         self.node = node
+
+        self.on_transcription = on_transcription
 
         self.recording = False
 
@@ -22,9 +26,9 @@ class QT_mic_operations:
 
         self.output_path = "current_speech.wav"
 
-        self.model_name = "something" # TODO
+        self.model_path = "/home/rayyanshahzad/Documents/Projects/companion_bot/vosk-model-en-us-0.22"
 
-        self.model = Model(model_name=self.model_name)
+        self.model = Model(model_path=self.model_path)
 
         self.sample_rate = 0
 
@@ -33,38 +37,35 @@ class QT_mic_operations:
         self.channels = 0
 
 
+
         #Ros expects a messagetype, topicname,callback function, queue depth
         self.speech_detector = node.create_subscription(MicEventFrame,"/qtrobot/mic/int/event/stream",self.detect_audio_then_record,10)
         
         self.audio_input = node.create_subscription(AudioFrameRaw, "/qtrobot/mic/int/audio/ch0/stream", self.record_audio, 10)
 
     def detect_audio_then_record(self, msg: MicEventFrame):
-        if msg.activity:
-            if self.recording == False:
-                self.audio_buffer = []
-                self.recording = True
-        else:
-            if self.recording == True:
-                self.recording = False
-                audio_data = b''.join(self.audio_buffer)
-                self.audio_buffer = []
+        if msg.activity and not self.recording:
+            self.audio_buffer = []
+            self.recording = True
+            self.start_time = time.monotonic()
 
+
+        if not msg.activity and self.recording:
+       
+            self.recording = False
                 # turn into a wav file
-                with wave.open(self.output_path, "wb") as wav:
-                    wav.setnchannels(self.channels)
-                    wav.setsampwidth(self.sample_width)
-                    wav.setframerate(self.sample_rate)
-                    wav.writeframes(audio_data)
-                
 
-                text = self.convert_to_speech()
+            if not self.audio_buffer:
+                self.node.get_logger().warning("Speech ended without recieving audio")
+                return
 
-                return text
+            if(self.sample_rate<= 0 or self.sample_width <= 0 or self.channels <= 0):
+                self.node.get_logger().error("Audio metadata invalid")
+                return
 
-            # complete audio/ combine audio buffer
-            # turn it into a wav file
-            # send to vosk
-            # return the text
+            self.finish_recording()
+
+        
 
     def record_audio(self, frame):
         if not self.recording:
@@ -75,40 +76,49 @@ class QT_mic_operations:
             self.sample_width = frame.sample_width
             self.channels = frame.channels
 
+
         self.audio_buffer.append(bytes(frame.data))
 
 
 
     def convert_to_speech(self):
         
-        wav = wave.open(self.output_path, "rb")
+        with wave.open(self.output_path, "rb") as wav:
+            data = wav.readframes(wav.getnframes())
+            sample_rate = wav.getframerate()
 
-        rec = KaldiRecognizer(self.model, wav.getframerate())
+        if not data:
+            return ""
+
+        rec = KaldiRecognizer(self.model, sample_rate)
 
         rec.SetWords(True)
 
-        rec.SetPartialWords(True)
+        rec.AcceptWaveform(data)
 
-        text = ""
+        result = json.loads(rec.FinalResult())
+
+        return result.get("text", "").strip()
+
+ 
+
+    def finish_recording(self):
+        if not self.audio_buffer:
+            return
+
+        audio_data = b''.join(self.audio_buffer)
+        self.audio_buffer = []
+
+        with wave.open(self.output_path, "wb") as wav:
+            wav.setnchannels(self.channels)
+            wav.setsampwidth(self.sample_width)
+            wav.setframerate(self.sample_rate)
+            wav.writeframes(audio_data)
         
-        data = wav.readframes(wav.getnframes())
-        if len(data) == 0:
-            wav.close()
-            return ""
+        text = self.convert_to_speech()
 
-        if rec.AcceptWaveform(data):
-            result = json.loads(rec.FinalResult())["text"]       
-
-        text = result.get("text","").strip()
-
-        wav.close()  
-
-           
-            
-        return text
-            
-
-
+        if text:
+            self.on_transcription(text)
         
         
 
