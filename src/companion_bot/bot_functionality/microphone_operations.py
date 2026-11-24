@@ -9,6 +9,7 @@ from vosk import Model, KaldiRecognizer
 import time
 import wave
 import json
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -24,9 +25,18 @@ class QT_mic_operations:
 
         self.audio_buffer = []
 
-        self.output_path = "current_speech.wav"
+        self.output_path = str(
+            Path(__file__).resolve().parent / "current_speech.wav"
+        )
 
-        self.model_path = "/home/rayyanshahzad/Documents/Projects/companion_bot/vosk-model-en-us-0.22"
+        default_model = (
+            Path(__file__).resolve().parents[3]
+            / "vosk-model-en-us-0.22"
+        )
+        self.model_path = os.getenv(
+            "VOSK_MODEL_PATH",
+            str(default_model),
+        )
 
         self.model = Model(model_path=self.model_path)
 

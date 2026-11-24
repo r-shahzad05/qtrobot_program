@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
 
 class llm_client:
     def __init__(self):
-        load_dotenv()
+        self.module_dir = Path(__file__).resolve().parent
+        load_dotenv(self.module_dir / ".env")
         self.api_key = os.getenv("openAI_api_key")
         if self.api_key is None:
             raise ValueError("API key is not set")
@@ -17,13 +19,17 @@ class llm_client:
     def generate_response(self,user_text, detected_emotion, conversation_history):
 
 
-        with open("bot_personality.txt", "r") as f:
+        with open(self.module_dir / "bot_personality.txt", "r") as f:
             bot_prompt = f.read()
 
-        with open(conversation_history, "r") as f:
+        history_path = Path(conversation_history)
+        if not history_path.is_absolute():
+            history_path = self.module_dir / history_path
+
+        with open(history_path, "r") as f:
             conv_hist = f.read()
 
-        with open("important_memories.txt","r") as f:
+        with open(self.module_dir / "important_memories.txt","r") as f:
             important = f.read()
 
         llm_input = f"{bot_prompt}, Conversation history = {conv_hist}, Important memories = {important}"
@@ -51,10 +57,10 @@ class llm_client:
             raise ValueError(f"Invalid LLM response: {response}")
 
         if important == "1":
-            with open("important_memories.txt", "a") as f:
+            with open(self.module_dir / "important_memories.txt", "a") as f:
                 f.write(f"- {user_input}")
 
-        with open(conversation_history, "a") as f:
+        with open(history_path, "a") as f:
             f.write(f"- User - {user_input}\n")
             f.write(f"- system - {response}\n")
 
@@ -63,7 +69,9 @@ class llm_client:
         return response, emotion, gesture
 
     def clear_conversaton_history(self,conversation_history):
-
-        open(conversation_history, "w").close()
+        history_path = Path(conversation_history)
+        if not history_path.is_absolute():
+            history_path = self.module_dir / history_path
+        history_path.write_text("", encoding="utf-8")
 
         return
