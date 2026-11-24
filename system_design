@@ -1,0 +1,19 @@
+Uses the ROS enviornment
+
+https://github.com/luxai-qtrobot/tutorials/tree/master/examples
+example codes for different functions
+
+need ubuntu to make it work so lab vm
+Conversation history is supported officially but is outdated/ can bbe done witho both online and offline llms
+uses visk or riva for the speech recognition engine
+https://github.com/luxai-qtrobot/tutorials/tree/master/examples/conversation_with_memory
+
+https://github.com/luxai-qtrobot/tutorials/tree/master/examples
+
+
+maybe do emotions using deepface
+qtrobot can take pictures
+https://docs.luxai.com/docs/modules/camera
+
+Article on older adults perceptions on chatbots
+Enam, M. A., Murmu, C., & Dixon, E. (2025). “Artificial Intelligence - Carrying us into the Future”: A Study of Older Adults’ Perceptions of LLM-Based Chatbots. International Journal of Human–Computer Interaction, 41(21), 13747–13770. https://doi.org/10.1080/10447318.2025.2476710

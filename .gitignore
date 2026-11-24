@@ -1,0 +1,20 @@
+# ROS/catkin build products
+ROS_file/build/
+ROS_file/devel/
+ROS_file/install/
+ROS_file/log/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.env
+*.wav
+
+# Downloaded speech models
+vosk-model-*/
+
+# Editor and OS files
+.vscode/*.user
+.DS_Store
